@@ -16,7 +16,7 @@ class SqlAlchemyAuthRepository:
             result = self._db.execute(
                 text(
                     """
-                    SELECT id, username, password_hash
+                    SELECT id, username, password_hash, role, is_active, must_change_password
                     FROM public.users
                     WHERE username = :username
                     LIMIT 1
@@ -52,7 +52,7 @@ class SqlAlchemyAuthRepository:
             result = self._db.execute(
                 text(
                     """
-                    SELECT id, username
+                    SELECT id, username, role, is_active, must_change_password
                     FROM public.users
                     WHERE id = :admin_id
                     LIMIT 1
@@ -101,6 +101,24 @@ class SqlAlchemyAuthRepository:
         except SQLAlchemyError as exc:
             raise RepositoryError("Error al consultar la contrasena del usuario autenticado.") from exc
 
+    def get_admin_password_hash_by_id(self, admin_id: UUID) -> str | None:
+        try:
+            result = self._db.execute(
+                text(
+                    """
+                    SELECT password_hash
+                    FROM public.users
+                    WHERE id = :admin_id
+                    LIMIT 1
+                    """
+                ),
+                {"admin_id": str(admin_id)},
+            )
+            row = result.mappings().first()
+            return str(row["password_hash"]) if row else None
+        except SQLAlchemyError as exc:
+            raise RepositoryError("Error al consultar la contrasena del administrador autenticado.") from exc
+
     def update_person_password(self, person_id: UUID, password_hash: str) -> None:
         try:
             self._db.execute(
@@ -118,3 +136,21 @@ class SqlAlchemyAuthRepository:
         except SQLAlchemyError as exc:
             self._db.rollback()
             raise RepositoryError("Error al actualizar la contrasena del usuario.") from exc
+
+    def update_admin_password(self, admin_id: UUID, password_hash: str) -> None:
+        try:
+            self._db.execute(
+                text(
+                    """
+                    UPDATE public.users
+                    SET password_hash = :password_hash,
+                        must_change_password = false
+                    WHERE id = :admin_id
+                    """
+                ),
+                {"admin_id": str(admin_id), "password_hash": password_hash},
+            )
+            self._db.commit()
+        except SQLAlchemyError as exc:
+            self._db.rollback()
+            raise RepositoryError("Error al actualizar la contrasena del administrador.") from exc

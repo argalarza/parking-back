@@ -9,8 +9,8 @@ PASSWORD = "Admin1234"   # cámbiala luego
 
 db = SessionLocal()
 db.execute(
-    text("""INSERT INTO public.users (username, password_hash, role)
-            VALUES (:u, :p, 'admin')
+    text("""INSERT INTO public.users (username, password_hash, role, must_change_password)
+            VALUES (:u, :p, 'admin', false)
             ON CONFLICT (username) DO NOTHING"""),
     {"u": USERNAME, "p": pwd.hash(PASSWORD)},
 )

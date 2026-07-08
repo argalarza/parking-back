@@ -74,6 +74,8 @@ def get_current_user(
 
         if user_type == "admin":
             current_user = repository.get_admin_by_id(subject_id)
+            if current_user is not None and not current_user["is_active"]:
+                raise HTTPException(status_code=403, detail="El usuario administrativo se encuentra inactivo.")
         else:
             current_user = repository.get_person_by_id(subject_id)
             if current_user is not None and not current_user["is_active"]:

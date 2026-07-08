@@ -62,6 +62,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 python-multipart==0.0.32
 passlib[bcrypt]
+bcrypt==4.0.1
 requests==2.34.2
 retina-face==0.0.18
 rich==15.0.0

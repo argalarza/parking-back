@@ -3,11 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.application.errors import RepositoryError
 from app.modules.auth.adapters.inbound.http.schemas import (
     AdminLoginRequest,
+    AdminLoginResponse,
     ChangePasswordRequest,
     PersonLoginRequest,
     PersonLoginResponse,
     SuccessResponse,
-    TokenResponse,
 )
 from app.modules.auth.application.use_cases import (
     AdminLoginUseCase,
@@ -28,7 +28,7 @@ from app.modules.auth.dependencies import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/admin/login", response_model=TokenResponse)
+@router.post("/admin/login", response_model=AdminLoginResponse)
 def admin_login(
     payload: AdminLoginRequest,
     use_case: AdminLoginUseCase = Depends(get_admin_login_use_case),
@@ -37,6 +37,8 @@ def admin_login(
         return use_case.execute(username=payload.username, password=payload.password)
     except UnauthorizedError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except ForbiddenError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     except RepositoryError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -62,12 +64,10 @@ def change_password(
     current_user: dict = Depends(get_current_user),
     use_case: ChangePasswordUseCase = Depends(get_change_password_use_case),
 ) -> dict:
-    if current_user["type"] != "person":
-        raise HTTPException(status_code=403, detail="Solo aplica a usuarios del parqueadero.")
-
     try:
         return use_case.execute(
-            person_id=current_user["id"],
+            user_id=current_user["id"],
+            user_type=current_user["type"],
             current_password=payload.current_password,
             new_password=payload.new_password,
         )

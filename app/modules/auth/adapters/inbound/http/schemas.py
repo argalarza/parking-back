@@ -21,6 +21,11 @@ class TokenResponse(BaseModel):
     token_type: str
 
 
+class AdminLoginResponse(TokenResponse):
+    must_change_password: bool
+    role: str
+
+
 class PersonLoginResponse(TokenResponse):
     must_change_password: bool
 
